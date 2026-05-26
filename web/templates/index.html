@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>intent</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #0d0d0f;
+      --surface:   #18181b;
+      --border:    rgba(255,255,255,0.08);
+      --muted:     rgba(255,255,255,0.4);
+      --accent:    #7c6af7;
+      --accent-hi: #9d8fff;
+      --success:   #4ade80;
+      --danger:    #f87171;
+      --text:      #f4f4f5;
+    }
+
+    html, body { height: 100%; overflow: hidden; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      font-size: 15px;
+    }
+
+    /* ── Layout ── */
+    .shell {
+      display: grid;
+      grid-template-rows: 56px 1fr;
+      height: 100vh;
+    }
+
+    /* ── Top bar ── */
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 1.5rem;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg);
+      z-index: 10;
+    }
+
+    .logo {
+      font-size: 1rem;
+      font-weight: 700;
+      letter-spacing: -0.3px;
+      color: var(--text);
+    }
+
+    .logo span { color: var(--accent); }
+
+    .steps {
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+      font-size: 0.75rem;
+      color: var(--muted);
+    }
+
+    .step {
+      padding: 0.25rem 0.75rem;
+      border-radius: 999px;
+      transition: all 0.2s;
+    }
+
+    .step.active { background: rgba(124,106,247,0.15); color: var(--accent-hi); font-weight: 600; }
+    .step.done   { color: var(--success); }
+
+    .steps .sep { color: var(--border); }
+
+    .key-btn {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 0.75rem;
+      padding: 0.35rem 0.75rem;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: color 0.2s, border-color 0.2s;
+    }
+    .key-btn:hover { color: var(--text); border-color: rgba(255,255,255,0.2); }
+    .key-btn.has-key { color: var(--success); }
+
+    /* ── Phases ── */
+    .content { position: relative; overflow: hidden; }
+
+    .phase {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem 1.5rem;
+      transition: transform 0.35s cubic-bezier(0.4,0,0.2,1),
+                  opacity  0.35s cubic-bezier(0.4,0,0.2,1);
+    }
+
+    .phase:not(.active) { pointer-events: none; }
+    .phase.hidden-left  { transform: translateX(-60px); opacity: 0; }
+    .phase.hidden-right { transform: translateX(60px);  opacity: 0; }
+
+    /* ── Phase 1: Describe ── */
+    #phase-1 { gap: 1.75rem; max-width: 680px; margin: 0 auto; width: 100%; }
+
+    .headline {
+      text-align: center;
+    }
+    .headline h1 {
+      font-size: clamp(1.6rem, 4vw, 2.4rem);
+      font-weight: 800;
+      letter-spacing: -0.8px;
+      line-height: 1.15;
+      margin-bottom: 0.5rem;
+    }
+    .headline p { color: var(--muted); font-size: 0.95rem; }
+
+    .input-wrap {
+      width: 100%;
+      position: relative;
+    }
+
+    #description {
+      width: 100%;
+      min-height: 120px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 1.1rem 1.25rem;
+      color: var(--text);
+      font-size: 1rem;
+      font-family: inherit;
+      resize: none;
+      outline: none;
+      transition: border-color 0.2s;
+      line-height: 1.55;
+    }
+    #description:focus { border-color: var(--accent); }
+    #description::placeholder { color: var(--muted); }
+
+    .examples {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      justify-content: center;
+    }
+
+    .example-chip {
+      font-size: 0.78rem;
+      color: var(--muted);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 0.3rem 0.85rem;
+      cursor: pointer;
+      transition: color 0.15s, border-color 0.15s;
+    }
+    .example-chip:hover { color: var(--text); border-color: rgba(255,255,255,0.2); }
+
+    /* ── Primary button ── */
+    .btn-primary {
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 12px;
+      padding: 0.8rem 2rem;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.1s;
+      white-space: nowrap;
+    }
+    .btn-primary:hover   { background: var(--accent-hi); }
+    .btn-primary:active  { transform: scale(0.97); }
+    .btn-primary:disabled { opacity: 0.4; cursor: default; transform: none; }
+
+    .btn-ghost {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      border-radius: 10px;
+      padding: 0.6rem 1.25rem;
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: color 0.2s, border-color 0.2s;
+    }
+    .btn-ghost:hover { color: var(--text); border-color: rgba(255,255,255,0.25); }
+
+    /* ── Phase 2: Spec ── */
+    #phase-2 {
+      justify-content: flex-start;
+      padding-top: 1.5rem;
+      gap: 1rem;
+      max-width: 840px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    .phase-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+    }
+
+    .phase-header h2 { font-size: 1.1rem; font-weight: 700; }
+    .phase-actions   { display: flex; gap: 0.5rem; align-items: center; }
+
+    .spec-hint {
+      font-size: 0.78rem;
+      color: var(--muted);
+      width: 100%;
+    }
+
+    #spec-editor {
+      width: 100%;
+      flex: 1;
+      min-height: 0;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 1.1rem 1.25rem;
+      color: #c9d1d9;
+      font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+      font-size: 0.82rem;
+      line-height: 1.7;
+      resize: none;
+      outline: none;
+      transition: border-color 0.2s;
+      overflow-y: auto;
+    }
+    #spec-editor:focus { border-color: var(--accent); }
+
+    /* streaming cursor */
+    .streaming-cursor::after {
+      content: '▊';
+      animation: blink 0.7s step-end infinite;
+      color: var(--accent);
+    }
+    @keyframes blink { 50% { opacity: 0; } }
+
+    /* ── Phase 3: App preview ── */
+    #phase-3 {
+      justify-content: flex-start;
+      padding-top: 1.5rem;
+      gap: 1rem;
+      width: 100%;
+      max-width: 100%;
+    }
+
+    #app-frame {
+      flex: 1;
+      width: 100%;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      background: #fff;
+    }
+
+    /* ── Loading overlay ── */
+    #loading-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(13,13,15,0.85);
+      backdrop-filter: blur(8px);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 1.5rem;
+      z-index: 100;
+      transition: opacity 0.3s;
+    }
+    #loading-overlay.hidden { opacity: 0; pointer-events: none; }
+
+    .loader-ring {
+      width: 52px;
+      height: 52px;
+      border: 3px solid rgba(124,106,247,0.2);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    #loading-msg {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--text);
+    }
+    #loading-sub {
+      font-size: 0.82rem;
+      color: var(--muted);
+      margin-top: -0.75rem;
+    }
+
+    /* ── API Key Modal ── */
+    #key-modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(13,13,15,0.92);
+      backdrop-filter: blur(12px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 200;
+      transition: opacity 0.25s;
+    }
+    #key-modal.hidden { opacity: 0; pointer-events: none; }
+
+    .modal-card {
+      background: var(--surface);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 20px;
+      padding: 2rem;
+      width: 100%;
+      max-width: 420px;
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+
+    .modal-card h2 { font-size: 1.2rem; font-weight: 700; }
+    .modal-card p  { font-size: 0.85rem; color: var(--muted); line-height: 1.5; }
+
+    #api-key-input {
+      width: 100%;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 0.75rem 1rem;
+      color: var(--text);
+      font-size: 0.88rem;
+      font-family: 'SF Mono', monospace;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    #api-key-input:focus { border-color: var(--accent); }
+
+    .modal-link {
+      font-size: 0.78rem;
+      color: var(--accent);
+      text-decoration: none;
+    }
+    .modal-link:hover { text-decoration: underline; }
+
+    .error-msg {
+      font-size: 0.8rem;
+      color: var(--danger);
+      display: none;
+    }
+    .error-msg.visible { display: block; }
+
+    /* ── Responsive ── */
+    @media (max-width: 600px) {
+      .steps { display: none; }
+      #phase-1 { padding: 1.25rem; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- API Key Modal -->
+<div id="key-modal">
+  <div class="modal-card">
+    <div>
+      <h2>Enter your Anthropic API key</h2>
+      <p style="margin-top:0.4rem">Your key is stored only in this browser and sent directly to the AI. It's never saved on any server.</p>
+    </div>
+    <input id="api-key-input" type="password" placeholder="sk-ant-..." autocomplete="off" />
+    <p class="error-msg" id="key-error">Invalid key — please check and try again.</p>
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:1rem;">
+      <a class="modal-link" href="https://console.anthropic.com/settings/keys" target="_blank">Get a key from Anthropic →</a>
+      <button class="btn-primary" onclick="saveKey()">Save &amp; Continue</button>
+    </div>
+  </div>
+</div>
+
+<!-- Shell -->
+<div class="shell">
+
+  <!-- Top bar -->
+  <header class="topbar">
+    <div class="logo">intent<span>.</span></div>
+    <nav class="steps">
+      <span class="step active" id="step-1">① Describe</span>
+      <span class="sep">›</span>
+      <span class="step" id="step-2">② Review spec</span>
+      <span class="sep">›</span>
+      <span class="step" id="step-3">③ Your app</span>
+    </nav>
+    <button class="key-btn" id="key-toggle" onclick="showKeyModal()">API Key</button>
+  </header>
+
+  <!-- Content -->
+  <main class="content">
+
+    <!-- Phase 1: Describe -->
+    <div class="phase active" id="phase-1">
+      <div style="width:100%;max-width:640px;display:flex;flex-direction:column;gap:1.75rem;">
+        <div class="headline">
+          <h1>What do you want to build?</h1>
+          <p>Describe it in plain English — no coding required.</p>
+        </div>
+
+        <div class="input-wrap">
+          <textarea id="description" rows="4"
+            placeholder="e.g. A shopping list that keeps a running total and warns me when I'm over budget"></textarea>
+        </div>
+
+        <div class="examples">
+          <span class="example-chip" onclick="setExample(this)">weather + activity recommender</span>
+          <span class="example-chip" onclick="setExample(this)">daily expense tracker</span>
+          <span class="example-chip" onclick="setExample(this)">Pomodoro focus timer</span>
+          <span class="example-chip" onclick="setExample(this)">habit streak tracker</span>
+          <span class="example-chip" onclick="setExample(this)">recipe ingredient calculator</span>
+        </div>
+
+        <div style="display:flex;justify-content:flex-end;">
+          <button class="btn-primary" id="generate-btn" onclick="generateSpec()">
+            Generate Spec →
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Phase 2: Spec review -->
+    <div class="phase hidden-right" id="phase-2">
+      <div class="phase-header">
+        <div>
+          <h2>Here's what we understood</h2>
+          <p class="spec-hint" style="margin-top:0.2rem">
+            Read through and edit anything that doesn't look right, then click Build App.
+          </p>
+        </div>
+        <div class="phase-actions">
+          <button class="btn-ghost" onclick="goToPhase(1)">← Back</button>
+          <button class="btn-primary" id="build-btn" onclick="buildApp()">Build App →</button>
+        </div>
+      </div>
+      <textarea id="spec-editor" spellcheck="false"></textarea>
+    </div>
+
+    <!-- Phase 3: App preview -->
+    <div class="phase hidden-right" id="phase-3">
+      <div class="phase-header" style="width:100%;">
+        <div>
+          <h2>Your app is ready</h2>
+          <p class="spec-hint" style="margin-top:0.2rem">Running live below. Download it to keep a copy.</p>
+        </div>
+        <div class="phase-actions">
+          <button class="btn-ghost" onclick="goToPhase(2)">← Edit Spec</button>
+          <button class="btn-ghost" onclick="downloadApp()">Download HTML</button>
+          <button class="btn-primary" onclick="startOver()">Build Another</button>
+        </div>
+      </div>
+      <iframe id="app-frame" allow="geolocation" sandbox="allow-scripts allow-same-origin allow-forms"></iframe>
+    </div>
+
+  </main>
+</div>
+
+<!-- Loading overlay -->
+<div id="loading-overlay" class="hidden">
+  <div class="loader-ring"></div>
+  <p id="loading-msg">Thinking…</p>
+  <p id="loading-sub">This usually takes 15–30 seconds</p>
+</div>
+
+<script>
+  // ── State ──────────────────────────────────────────────────────────────────
+  let currentPhase = 1;
+  let generatedApp = '';
+
+  // ── API Key ────────────────────────────────────────────────────────────────
+  function getKey() {
+    return localStorage.getItem('intent_api_key') || '';
+  }
+
+  function saveKey() {
+    const key = document.getElementById('api-key-input').value.trim();
+    if (!key.startsWith('sk-ant-') && !key.startsWith('sk-')) {
+      document.getElementById('key-error').classList.add('visible');
+      return;
+    }
+    localStorage.setItem('intent_api_key', key);
+    document.getElementById('key-modal').classList.add('hidden');
+    document.getElementById('key-toggle').classList.add('has-key');
+    document.getElementById('key-toggle').textContent = '✓ API Key';
+    document.getElementById('key-error').classList.remove('visible');
+  }
+
+  function showKeyModal() {
+    document.getElementById('api-key-input').value = getKey();
+    document.getElementById('key-modal').classList.remove('hidden');
+  }
+
+  // Show modal on load if no key in env (server will 401 if needed)
+  window.addEventListener('load', () => {
+    const key = getKey();
+    if (key) {
+      document.getElementById('key-modal').classList.add('hidden');
+      document.getElementById('key-toggle').classList.add('has-key');
+      document.getElementById('key-toggle').textContent = '✓ API Key';
+    }
+    // If ANTHROPIC_API_KEY is set server-side, the 401 will never come anyway
+  });
+
+  document.getElementById('api-key-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter') saveKey();
+  });
+
+  // ── Phase navigation ───────────────────────────────────────────────────────
+  function goToPhase(n) {
+    const prev = document.getElementById(`phase-${currentPhase}`);
+    const next = document.getElementById(`phase-${n}`);
+
+    prev.classList.remove('active');
+    prev.classList.add(n > currentPhase ? 'hidden-left' : 'hidden-right');
+
+    next.classList.remove('hidden-left', 'hidden-right');
+    next.classList.add('active');
+
+    document.querySelectorAll('.step').forEach((s, i) => {
+      s.classList.remove('active', 'done');
+      if (i + 1 < n)  s.classList.add('done');
+      if (i + 1 === n) s.classList.add('active');
+    });
+
+    currentPhase = n;
+  }
+
+  // ── Examples ───────────────────────────────────────────────────────────────
+  function setExample(el) {
+    document.getElementById('description').value = el.textContent;
+    document.getElementById('description').focus();
+  }
+
+  // ── Streaming helper ───────────────────────────────────────────────────────
+  async function streamEndpoint(url, body, onChunk, onDone, onError) {
+    const key = getKey();
+    const headers = { 'Content-Type': 'application/json' };
+    if (key) headers['X-Api-Key'] = key;
+
+    const res = await fetch(url, { method: 'POST', headers, body: JSON.stringify(body) });
+
+    if (res.status === 401) {
+      showKeyModal();
+      onError('Please enter your API key to continue.');
+      return;
+    }
+
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop();
+      for (const line of lines) {
+        if (!line.startsWith('data: ')) continue;
+        try {
+          const data = JSON.parse(line.slice(6));
+          if (data.error) { onError(data.error); return; }
+          if (data.chunk) onChunk(data.chunk);
+          if (data.done)  onDone();
+        } catch { /* skip malformed */ }
+      }
+    }
+  }
+
+  // ── Loading overlay ────────────────────────────────────────────────────────
+  function showLoading(msg, sub = 'This usually takes 15–30 seconds') {
+    document.getElementById('loading-msg').textContent = msg;
+    document.getElementById('loading-sub').textContent = sub;
+    document.getElementById('loading-overlay').classList.remove('hidden');
+  }
+
+  function hideLoading() {
+    document.getElementById('loading-overlay').classList.add('hidden');
+  }
+
+  // ── Generate spec ──────────────────────────────────────────────────────────
+  async function generateSpec() {
+    const description = document.getElementById('description').value.trim();
+    if (!description) {
+      document.getElementById('description').focus();
+      return;
+    }
+
+    showLoading('Understanding your idea…', 'Writing the specification…');
+
+    const editor = document.getElementById('spec-editor');
+    editor.value = '';
+    editor.classList.add('streaming-cursor');
+
+    document.getElementById('build-btn').disabled = true;
+    goToPhase(2);
+    hideLoading();
+
+    let spec = '';
+    await streamEndpoint(
+      '/api/spec',
+      { description },
+      chunk => { spec += chunk; editor.value = spec; editor.scrollTop = editor.scrollHeight; },
+      () => { editor.classList.remove('streaming-cursor'); document.getElementById('build-btn').disabled = false; },
+      err  => { editor.classList.remove('streaming-cursor'); editor.value = `Error: ${err}`; }
+    );
+  }
+
+  // ── Build app ──────────────────────────────────────────────────────────────
+  async function buildApp() {
+    const spec = document.getElementById('spec-editor').value.trim();
+    if (!spec) return;
+
+    showLoading('Building your app…', 'Generating code from the specification…');
+    document.getElementById('build-btn').disabled = true;
+
+    generatedApp = '';
+    let done = false;
+
+    await streamEndpoint(
+      '/api/build',
+      { spec },
+      chunk => { generatedApp += chunk; },
+      () => { done = true; },
+      err  => {
+        hideLoading();
+        document.getElementById('build-btn').disabled = false;
+        alert(`Build failed: ${err}`);
+      }
+    );
+
+    if (!done) return;
+
+    hideLoading();
+    document.getElementById('build-btn').disabled = false;
+
+    // Load generated app into iframe
+    const frame = document.getElementById('app-frame');
+    const blob = new Blob([generatedApp], { type: 'text/html' });
+    frame.src = URL.createObjectURL(blob);
+
+    goToPhase(3);
+  }
+
+  // ── Download ───────────────────────────────────────────────────────────────
+  function downloadApp() {
+    if (!generatedApp) return;
+    const blob = new Blob([generatedApp], { type: 'text/html' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'my-app.html';
+    a.click();
+  }
+
+  // ── Start over ─────────────────────────────────────────────────────────────
+  function startOver() {
+    generatedApp = '';
+    document.getElementById('description').value = '';
+    document.getElementById('spec-editor').value = '';
+    document.getElementById('app-frame').src = 'about:blank';
+    document.getElementById('build-btn').disabled = false;
+
+    // Jump straight back
+    const cur = document.getElementById(`phase-${currentPhase}`);
+    cur.classList.remove('active');
+    cur.classList.add('hidden-right');
+
+    const p1 = document.getElementById('phase-1');
+    p1.classList.remove('hidden-left', 'hidden-right');
+    p1.classList.add('active');
+
+    document.querySelectorAll('.step').forEach((s, i) => {
+      s.classList.remove('active', 'done');
+      if (i === 0) s.classList.add('active');
+    });
+
+    currentPhase = 1;
+    document.getElementById('description').focus();
+  }
+
+  // ── Keyboard shortcuts ─────────────────────────────────────────────────────
+  document.addEventListener('keydown', e => {
+    if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+      if (currentPhase === 1) generateSpec();
+      if (currentPhase === 2) buildApp();
+    }
+  });
+</script>
+</body>
+</html>

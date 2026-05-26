@@ -1,0 +1,40 @@
+define WeatherApp
+  purpose: Show current weather and recommend activities based on location
+
+define GetLocation
+  purpose: Get user's current geographic coordinates
+  output: Location { lat, lon, city }
+  ensures:
+    - user is prompted for permission before access
+    - raises LocationDenied if permission refused
+  effects: [device.geolocation]
+
+define FetchWeather
+  purpose: Get current weather conditions for a location
+  input:  Location
+  output: Weather { temperature, feels_like, humidity, wind_speed, condition }
+  ensures:
+    - if service unavailable: raises ServiceUnavailable
+  effects: [http.get, external.api]
+  example:
+    given:   { lat: 37.77, lon: -122.41 }
+    returns: { temperature: 18, condition: Cloudy, humidity: 72 }
+
+define RecommendActivities
+  purpose: Suggest activities appropriate for current weather
+  input:  Weather
+  output: [Activity] where 4 <= |output| <= 6
+  ensures:
+    - activities match weather condition
+    - mix of indoor and outdoor included when condition allows
+    - if condition = Stormy: no outdoor activities
+  effects: []
+
+define RenderUI
+  purpose: Display weather and activities in a web interface
+  input:  Weather x [Activity] x Location
+  ensures:
+    - temperature shown, toggleable between C and F
+    - background reflects current weather condition
+    - each activity shows name, type, and reason
+  effects: [dom.write]

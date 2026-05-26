@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Find the Cheapest Car Rental</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:      #0d0d0f;
+      --surface: #18181b;
+      --border:  rgba(255,255,255,0.08);
+      --muted:   rgba(255,255,255,0.45);
+      --accent:  #f59e0b;
+      --accent2: #fbbf24;
+      --text:    #f4f4f5;
+      --success: #4ade80;
+      --radius:  16px;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 2rem 1rem 4rem;
+    }
+
+    .app { max-width: 680px; margin: 0 auto; }
+
+    /* ── Header ── */
+    .header { text-align: center; margin-bottom: 2.5rem; }
+    .header h1 {
+      font-size: clamp(1.6rem, 4vw, 2.2rem);
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      margin-bottom: 0.4rem;
+    }
+    .header h1 span { color: var(--accent); }
+    .header p { color: var(--muted); font-size: 0.9rem; }
+
+    /* ── Card ── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.5rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .card-title {
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      margin-bottom: 1.1rem;
+    }
+
+    /* ── Form ── */
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+
+    .form-field { display: flex; flex-direction: column; gap: 0.4rem; }
+    .form-field.full { grid-column: 1 / -1; }
+
+    label {
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    input, select {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 0.65rem 0.85rem;
+      color: var(--text);
+      font-size: 0.9rem;
+      font-family: inherit;
+      outline: none;
+      transition: border-color 0.2s;
+      width: 100%;
+    }
+
+    input:focus, select:focus { border-color: var(--accent); }
+    input.error, select.error { border-color: #f87171; }
+    select option { background: #1c1c1e; }
+
+    .field-error {
+      font-size: 0.72rem;
+      color: #f87171;
+      display: none;
+    }
+    .field-error.show { display: block; }
+
+    .duration-badge {
+      display: none;
+      font-size: 0.75rem;
+      color: var(--accent);
+      font-weight: 600;
+      margin-top: 0.25rem;
+    }
+    .duration-badge.show { display: block; }
+
+    /* ── Button ── */
+    .btn {
+      width: 100%;
+      background: var(--accent);
+      color: #0d0d0f;
+      border: none;
+      border-radius: 12px;
+      padding: 0.9rem;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      margin-top: 1.25rem;
+      transition: background 0.2s, transform 0.1s;
+    }
+    .btn:hover  { background: var(--accent2); }
+    .btn:active { transform: scale(0.98); }
+
+    /* ── Results ── */
+    #results { display: none; }
+
+    .checklist { display: flex; flex-direction: column; gap: 0.6rem; }
+
+    .provider-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 0.85rem 1rem;
+      transition: background 0.2s;
+    }
+
+    .provider-left { display: flex; align-items: center; gap: 0.75rem; }
+
+    .provider-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.1rem;
+      flex-shrink: 0;
+    }
+
+    .provider-name { font-size: 0.9rem; font-weight: 600; }
+    .provider-note { font-size: 0.72rem; color: var(--muted); margin-top: 0.1rem; }
+
+    .provider-link {
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--accent);
+      text-decoration: none;
+      background: rgba(245,158,11,0.12);
+      padding: 0.35rem 0.85rem;
+      border-radius: 999px;
+      white-space: nowrap;
+      transition: background 0.2s;
+    }
+    .provider-link:hover { background: rgba(245,158,11,0.22); }
+
+    .checked-badge {
+      display: none;
+      font-size: 0.72rem;
+      color: var(--success);
+      font-weight: 600;
+      padding: 0.3rem 0.75rem;
+      border-radius: 999px;
+      background: rgba(74,222,128,0.1);
+    }
+
+    .provider-row.checked { background: rgba(74,222,128,0.04); border-color: rgba(74,222,128,0.15); }
+    .provider-row.checked .checked-badge { display: inline; }
+    .provider-row.checked .provider-link { display: none; }
+
+    /* ── Price tracker ── */
+    .price-row {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 0.75rem 1rem;
+    }
+
+    .price-provider { font-size: 0.85rem; font-weight: 600; min-width: 80px; }
+
+    .price-input-wrap {
+      flex: 1;
+      position: relative;
+    }
+
+    .price-input-wrap::before {
+      content: '$';
+      position: absolute;
+      left: 0.75rem;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--muted);
+      font-size: 0.85rem;
+    }
+
+    .price-input {
+      padding-left: 1.5rem !important;
+    }
+
+    .price-tag {
+      font-size: 0.75rem;
+      color: var(--muted);
+      min-width: 60px;
+      text-align: right;
+    }
+
+    .cheapest-badge {
+      display: none;
+      font-size: 0.7rem;
+      font-weight: 700;
+      color: #0d0d0f;
+      background: var(--success);
+      padding: 0.2em 0.6em;
+      border-radius: 999px;
+    }
+
+    /* ── Tips ── */
+    .tips { display: flex; flex-direction: column; gap: 0.6rem; }
+
+    .tip {
+      display: flex;
+      gap: 0.75rem;
+      align-items: flex-start;
+      font-size: 0.85rem;
+      line-height: 1.5;
+      color: rgba(255,255,255,0.75);
+    }
+
+    .tip-icon { font-size: 1rem; flex-shrink: 0; margin-top: 0.05rem; }
+
+    /* ── Reset ── */
+    .reset-btn {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      border-radius: 10px;
+      padding: 0.55rem 1.25rem;
+      font-size: 0.82rem;
+      cursor: pointer;
+      transition: color 0.2s, border-color 0.2s;
+      display: block;
+      margin: 0 auto;
+    }
+    .reset-btn:hover { color: var(--text); border-color: rgba(255,255,255,0.25); }
+
+    @media (max-width: 480px) {
+      .form-grid { grid-template-columns: 1fr; }
+      .form-field.full { grid-column: 1; }
+    }
+  </style>
+</head>
+<body>
+<div class="app">
+
+  <div class="header">
+    <h1>Find the <span>cheapest</span> car rental</h1>
+    <p>Enter your trip details — we'll open every major provider at once.</p>
+  </div>
+
+  <!-- Search form -->
+  <div class="card" id="search-card">
+    <div class="card-title">Trip Details</div>
+    <div class="form-grid">
+      <div class="form-field full">
+        <label for="location">Pickup Location</label>
+        <input type="text" id="location" placeholder="City, airport code, or address" />
+        <span class="field-error" id="err-location">Enter a pickup location</span>
+      </div>
+      <div class="form-field">
+        <label for="pickup">Pickup Date</label>
+        <input type="date" id="pickup" />
+        <span class="field-error" id="err-pickup">Select a pickup date</span>
+      </div>
+      <div class="form-field">
+        <label for="return">Return Date</label>
+        <input type="date" id="return" />
+        <span class="field-error" id="err-return">Must be after pickup</span>
+        <span class="duration-badge" id="duration-badge"></span>
+      </div>
+      <div class="form-field">
+        <label for="car-type">Car Type</label>
+        <select id="car-type">
+          <option value="Economy">Economy</option>
+          <option value="Compact">Compact</option>
+          <option value="Midsize" selected>Midsize</option>
+          <option value="Full-size">Full-size</option>
+          <option value="SUV">SUV</option>
+          <option value="Luxury">Luxury</option>
+          <option value="Minivan">Minivan</option>
+          <option value="Pickup Truck">Pickup Truck</option>
+        </select>
+      </div>
+      <div class="form-field">
+        <label for="age">Driver Age</label>
+        <input type="number" id="age" placeholder="25" min="18" max="99" />
+        <span class="field-error" id="err-age">Must be 18 or older</span>
+      </div>
+    </div>
+    <button class="btn" onclick="openComparisons()">Compare Prices →</button>
+  </div>
+
+  <!-- Results -->
+  <div id="results">
+
+    <!-- Provider checklist -->
+    <div class="card">
+      <div class="card-title">Open &amp; Compare — click each to search</div>
+      <div class="checklist" id="checklist"></div>
+    </div>
+
+    <!-- Price tracker -->
+    <div class="card">
+      <div class="card-title">Track Prices (enter what you find)</div>
+      <div id="price-tracker" style="display:flex;flex-direction:column;gap:0.6rem;"></div>
+      <p id="winner-msg" style="margin-top:1rem;font-size:0.85rem;color:var(--muted);text-align:center;display:none;"></p>
+    </div>
+
+    <!-- Tips -->
+    <div class="card">
+      <div class="card-title">Money-saving tips</div>
+      <div class="tips">
+        <div class="tip"><span class="tip-icon">📅</span><span>Book at least <strong>1–2 weeks ahead</strong> — last-minute rentals are almost always more expensive.</span></div>
+        <div class="tip"><span class="tip-icon">🏪</span><span>Pick up <strong>off-airport</strong> — airport locations add a 20–30% surcharge. A nearby Enterprise or Hertz often saves significantly.</span></div>
+        <div class="tip"><span class="tip-icon">🛒</span><span>Check <strong>Costco Travel</strong> and <strong>Sam's Club</strong> — member rates frequently beat everything else.</span></div>
+        <div class="tip"><span class="tip-icon">💳</span><span>Your <strong>credit card</strong> may include free collision coverage — check before paying for rental insurance.</span></div>
+        <div class="tip"><span class="tip-icon">🔄</span><span>Search for <strong>free cancellation</strong> rates, then rebook closer to your trip if prices drop.</span></div>
+        <div class="tip"><span class="tip-icon">⛽</span><span>Always return the car with a <strong>full tank</strong> — prepaid fuel options are almost never worth it.</span></div>
+        <div class="tip"><span class="tip-icon">👤</span><span>If the driver is <strong>under 25</strong>, ask about young driver fees — they vary a lot between companies.</span></div>
+      </div>
+    </div>
+
+    <button class="reset-btn" onclick="reset()">← New Search</button>
+  </div>
+
+</div>
+<script>
+  const PROVIDERS = [
+    { name: 'Kayak',      icon: '🔍', color: '#ff690f', note: 'Compares all major providers',  url: (l, p, r, t) => `https://www.kayak.com/cars/${enc(l)}/${p}/${r}` },
+    { name: 'Enterprise', icon: '🚗', color: '#006747', note: 'Often cheapest for weekly rates', url: (l, p, r, t) => `https://www.enterprise.com/en/car-rental/deeplinking.html?icid=RENTAL.0.ENT.DEEPLINK.-1_rental` },
+    { name: 'Hertz',      icon: '🏎️', color: '#ffc72c', note: 'Good Gold member discounts',     url: (l, p, r, t) => `https://www.hertz.com/rentacar/reservation/` },
+    { name: 'Avis',       icon: '🚙', color: '#c8102e', note: 'Preferred member deals',         url: (l, p, r, t) => `https://www.avis.com/en/reservation` },
+    { name: 'Budget',     icon: '💰', color: '#f47216', note: 'Typically lowest list prices',   url: (l, p, r, t) => `https://www.budget.com/en/reservation` },
+    { name: 'Expedia',    icon: '🌐', color: '#1976d2', note: 'Bundle with hotel for savings',  url: (l, p, r, t) => `https://www.expedia.com/carsearch?locn=${enc(l)}&d1=${p}&d2=${r}` },
+  ];
+
+  function enc(s) { return encodeURIComponent(s); }
+
+  function getDates() {
+    return {
+      pickup: document.getElementById('pickup').value,
+      ret:    document.getElementById('return').value,
+    };
+  }
+
+  function calcDays(p, r) {
+    if (!p || !r) return 0;
+    return Math.round((new Date(r) - new Date(p)) / 86400000);
+  }
+
+  // Auto-update duration badge
+  ['pickup', 'return'].forEach(id => {
+    document.getElementById(id).addEventListener('change', () => {
+      const { pickup, ret } = getDates();
+      const days = calcDays(pickup, ret);
+      const badge = document.getElementById('duration-badge');
+      if (days > 0) {
+        badge.textContent = `${days} day${days !== 1 ? 's' : ''}`;
+        badge.classList.add('show');
+      } else {
+        badge.classList.remove('show');
+      }
+    });
+  });
+
+  // Set min date to today
+  const today = new Date().toISOString().split('T')[0];
+  document.getElementById('pickup').min = today;
+  document.getElementById('return').min = today;
+
+  function validate() {
+    let ok = true;
+    const location = document.getElementById('location').value.trim();
+    const pickup   = document.getElementById('pickup').value;
+    const ret      = document.getElementById('return').value;
+    const age      = parseInt(document.getElementById('age').value);
+
+    const show = (id, show) => document.getElementById(id).classList.toggle('show', show);
+    const err  = (id, has)  => document.getElementById(id).classList.toggle('error', has);
+
+    if (!location) { show('err-location', true); err('location', true); ok = false; }
+    else           { show('err-location', false); err('location', false); }
+
+    if (!pickup)   { show('err-pickup', true); err('pickup', true); ok = false; }
+    else           { show('err-pickup', false); err('pickup', false); }
+
+    if (!ret || calcDays(pickup, ret) <= 0) { show('err-return', true); err('return', true); ok = false; }
+    else                                    { show('err-return', false); err('return', false); }
+
+    if (!age || age < 18) { show('err-age', true); err('age', true); ok = false; }
+    else                  { show('err-age', false); err('age', false); }
+
+    return ok;
+  }
+
+  function openComparisons() {
+    if (!validate()) return;
+
+    const location = document.getElementById('location').value.trim();
+    const pickup   = document.getElementById('pickup').value;
+    const ret      = document.getElementById('return').value;
+    const carType  = document.getElementById('car-type').value;
+    const days     = calcDays(pickup, ret);
+
+    // Build checklist
+    const checklist = document.getElementById('checklist');
+    checklist.innerHTML = '';
+
+    PROVIDERS.forEach((p, i) => {
+      const url = p.url(location, pickup, ret, carType);
+      const row = document.createElement('div');
+      row.className = 'provider-row';
+      row.id = `provider-${i}`;
+      row.innerHTML = `
+        <div class="provider-left">
+          <div class="provider-icon" style="background:${p.color}22;color:${p.color}">${p.icon}</div>
+          <div>
+            <div class="provider-name">${p.name}</div>
+            <div class="provider-note">${p.note}</div>
+          </div>
+        </div>
+        <div>
+          <a class="provider-link" href="${url}" target="_blank" onclick="markChecked(${i})">Open →</a>
+          <span class="checked-badge">✓ Checked</span>
+        </div>
+      `;
+      checklist.appendChild(row);
+    });
+
+    // Build price tracker
+    const tracker = document.getElementById('price-tracker');
+    tracker.innerHTML = '';
+    PROVIDERS.forEach((p, i) => {
+      const row = document.createElement('div');
+      row.className = 'price-row';
+      row.innerHTML = `
+        <div class="price-provider">${p.name}</div>
+        <div class="price-input-wrap">
+          <input class="price-input" type="number" id="price-${i}" placeholder="0.00"
+            min="0" step="0.01" oninput="updateWinner()" />
+        </div>
+        <div style="display:flex;align-items:center;gap:0.5rem;">
+          <span class="price-tag" id="per-day-${i}"></span>
+          <span class="cheapest-badge" id="badge-${i}">Cheapest</span>
+        </div>
+      `;
+      tracker.appendChild(row);
+    });
+
+    // Update label with trip details
+    document.querySelector('.card-title').textContent =
+      `${location} · ${formatDate(pickup)} – ${formatDate(ret)} · ${days} day${days!==1?'s':''} · ${carType}`;
+
+    // Show results
+    document.getElementById('search-card').style.display = 'none';
+    document.getElementById('results').style.display = 'block';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+
+    // Auto-open Kayak first
+    setTimeout(() => {
+      const kayak = PROVIDERS[0];
+      window.open(kayak.url(location, pickup, ret, carType), '_blank');
+      markChecked(0);
+    }, 300);
+
+    window._days = days;
+  }
+
+  function markChecked(i) {
+    document.getElementById(`provider-${i}`).classList.add('checked');
+  }
+
+  function formatDate(d) {
+    if (!d) return '';
+    const [y, m, day] = d.split('-');
+    return new Date(y, m-1, day).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  }
+
+  function updateWinner() {
+    const days = window._days || 1;
+    let minPrice = Infinity, minIdx = -1;
+    const prices = [];
+
+    PROVIDERS.forEach((_, i) => {
+      const val = parseFloat(document.getElementById(`price-${i}`).value);
+      prices.push(isNaN(val) ? null : val);
+      document.getElementById(`badge-${i}`).style.display = 'none';
+      const perDay = document.getElementById(`per-day-${i}`);
+      if (!isNaN(val) && val > 0) {
+        perDay.textContent = `$${(val / days).toFixed(0)}/day`;
+        if (val < minPrice) { minPrice = val; minIdx = i; }
+      } else {
+        perDay.textContent = '';
+      }
+    });
+
+    const winner = document.getElementById('winner-msg');
+    if (minIdx >= 0) {
+      document.getElementById(`badge-${minIdx}`).style.display = 'inline';
+      const saving = prices.filter(p => p !== null && p > minPrice);
+      const maxSave = saving.length ? Math.max(...saving) - minPrice : 0;
+      winner.style.display = 'block';
+      winner.innerHTML = `<strong style="color:#4ade80">${PROVIDERS[minIdx].name}</strong> is cheapest at <strong>$${minPrice.toFixed(2)}</strong> total${maxSave > 0.5 ? ` — saving up to <strong>$${maxSave.toFixed(2)}</strong>` : ''}.`;
+    } else {
+      winner.style.display = 'none';
+    }
+  }
+
+  function reset() {
+    document.getElementById('search-card').style.display = 'block';
+    document.getElementById('results').style.display = 'none';
+    document.getElementById('duration-badge').classList.remove('show');
+  }
+</script>
+</body>
+</html>
