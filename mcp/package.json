@@ -1,15 +1,26 @@
 {
-  "name": "@forge-ai/mcp",
+  "name": "forge-intent",
   "version": "0.1.0",
   "description": "Forge MCP server — translate human ideas into working software",
-  "type": "module",
-  "bin": {
-    "forge-mcp": "./dist/index.js"
+  "keywords": ["forge", "mcp", "ai", "code-generation", "no-code", "claude"],
+  "license": "MIT",
+  "homepage": "https://github.com/ngwarner/forge",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ngwarner/forge.git",
+    "directory": "mcp"
   },
+  "type": "module",
+  "main": "./dist/index.js",
+  "bin": {
+    "forge-intent": "./dist/index.js"
+  },
+  "files": ["dist", "README.md"],
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && chmod +x dist/index.js",
     "start": "node dist/index.js",
-    "dev": "tsx src/index.ts"
+    "dev": "tsx src/index.ts",
+    "prepublishOnly": "npm run build"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.40.0",
@@ -20,5 +31,8 @@
     "@types/node": "^22.0.0",
     "tsx": "^4.0.0",
     "typescript": "^5.0.0"
+  },
+  "engines": {
+    "node": ">=18"
   }
 }
