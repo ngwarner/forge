@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Forge — Describe it. Build it.</title>
+  <meta name="description" content="Forge is an open protocol for human-AI creation. Describe what you need in plain English. Forge builds it — safely, verifiably, completely.">
+  <meta property="og:title" content="Forge — Describe it. Build it.">
+  <meta property="og:description" content="An open protocol for human-AI creation. No code required.">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:      #0a0a0c;
+      --surface: #111114;
+      --border:  rgba(255,255,255,0.07);
+      --muted:   rgba(255,255,255,0.4);
+      --accent:  #7c6af7;
+      --accent2: #a78bfa;
+      --text:    #f0f0f2;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+    }
+
+    /* ── Nav ── */
+    nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      height: 56px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 2rem;
+      border-bottom: 1px solid var(--border);
+      background: rgba(10,10,12,0.85);
+      backdrop-filter: blur(12px);
+      z-index: 100;
+    }
+
+    .nav-logo {
+      font-size: 1.1rem;
+      font-weight: 800;
+      letter-spacing: -0.3px;
+    }
+    .nav-logo span { color: var(--accent); }
+
+    .nav-links {
+      display: flex;
+      gap: 1.5rem;
+      list-style: none;
+    }
+
+    .nav-links a {
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 0.85rem;
+      transition: color 0.15s;
+    }
+    .nav-links a:hover { color: var(--text); }
+
+    .nav-cta {
+      background: var(--accent);
+      color: #fff !important;
+      padding: 0.4rem 1rem;
+      border-radius: 8px;
+      font-weight: 600;
+    }
+    .nav-cta:hover { background: var(--accent2) !important; color: #fff !important; }
+
+    /* ── Hero ── */
+    .hero {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 6rem 2rem 4rem;
+    }
+
+    .hero-badge {
+      display: inline-block;
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--accent2);
+      background: rgba(124,106,247,0.12);
+      border: 1px solid rgba(124,106,247,0.25);
+      padding: 0.3em 0.9em;
+      border-radius: 999px;
+      margin-bottom: 2rem;
+    }
+
+    h1 {
+      font-size: clamp(2.5rem, 8vw, 5rem);
+      font-weight: 900;
+      letter-spacing: -2px;
+      line-height: 1.05;
+      margin-bottom: 1.5rem;
+      max-width: 800px;
+    }
+
+    h1 em {
+      font-style: normal;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .hero-sub {
+      font-size: clamp(1rem, 2.5vw, 1.25rem);
+      color: var(--muted);
+      max-width: 520px;
+      margin-bottom: 3rem;
+      line-height: 1.65;
+    }
+
+    .hero-actions {
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .btn {
+      display: inline-block;
+      padding: 0.8rem 1.75rem;
+      border-radius: 12px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      text-decoration: none;
+      transition: all 0.2s;
+    }
+
+    .btn-primary { background: var(--accent); color: #fff; }
+    .btn-primary:hover { background: var(--accent2); transform: translateY(-1px); }
+
+    .btn-secondary {
+      background: var(--surface);
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+    .btn-secondary:hover { border-color: rgba(255,255,255,0.2); transform: translateY(-1px); }
+
+    /* ── Demo ── */
+    .demo {
+      max-width: 720px;
+      margin: 4rem auto 0;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      overflow: hidden;
+    }
+
+    .demo-bar {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.75rem 1rem;
+      border-bottom: 1px solid var(--border);
+      background: rgba(255,255,255,0.02);
+    }
+
+    .dot { width: 10px; height: 10px; border-radius: 50%; }
+    .dot-r { background: #ff5f57; }
+    .dot-y { background: #ffbd2e; }
+    .dot-g { background: #28c840; }
+    .demo-title { font-size: 0.75rem; color: var(--muted); margin-left: 0.5rem; }
+
+    .demo-body { padding: 1.5rem; }
+
+    .msg { display: flex; gap: 0.75rem; margin-bottom: 1.25rem; }
+    .msg:last-child { margin-bottom: 0; }
+
+    .msg-avatar {
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    .msg-human .msg-avatar  { background: rgba(124,106,247,0.2); color: var(--accent2); }
+    .msg-forge .msg-avatar  { background: rgba(74,222,128,0.15); color: #4ade80; }
+
+    .msg-content { font-size: 0.88rem; line-height: 1.6; padding-top: 0.3rem; }
+    .msg-human .msg-content { color: var(--text); }
+    .msg-forge .msg-content { color: rgba(255,255,255,0.75); }
+
+    .msg-content code {
+      font-family: 'SF Mono', 'Fira Code', monospace;
+      font-size: 0.82em;
+      background: rgba(255,255,255,0.06);
+      padding: 0.1em 0.4em;
+      border-radius: 4px;
+      color: var(--accent2);
+    }
+
+    /* ── How it works ── */
+    .section {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 6rem 2rem;
+    }
+
+    .section-label {
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--accent);
+      margin-bottom: 1rem;
+    }
+
+    h2 {
+      font-size: clamp(1.75rem, 4vw, 2.5rem);
+      font-weight: 800;
+      letter-spacing: -0.8px;
+      margin-bottom: 1rem;
+    }
+
+    .section-sub {
+      color: var(--muted);
+      font-size: 1rem;
+      max-width: 540px;
+      margin-bottom: 3rem;
+    }
+
+    .steps {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1.5rem;
+    }
+
+    .step-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 1.5rem;
+    }
+
+    .step-num {
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--accent);
+      margin-bottom: 0.75rem;
+    }
+
+    .step-title {
+      font-size: 1rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+    }
+
+    .step-desc { font-size: 0.85rem; color: var(--muted); line-height: 1.55; }
+
+    /* ── Why safe ── */
+    .safety-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1.25rem;
+    }
+
+    .safety-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 1.5rem;
+      display: flex;
+      gap: 1rem;
+      align-items: flex-start;
+    }
+
+    .safety-icon { font-size: 1.5rem; flex-shrink: 0; }
+    .safety-title { font-size: 0.95rem; font-weight: 700; margin-bottom: 0.35rem; }
+    .safety-desc  { font-size: 0.82rem; color: var(--muted); line-height: 1.5; }
+
+    /* ── Get started ── */
+    .get-started {
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      padding: 6rem 2rem;
+      text-align: center;
+    }
+
+    .get-started h2 { margin-bottom: 0.75rem; }
+    .get-started p  { color: var(--muted); margin-bottom: 2.5rem; }
+
+    .path-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 1.25rem;
+      max-width: 880px;
+      margin: 0 auto;
+      text-align: left;
+    }
+
+    .path-card {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 1.5rem;
+    }
+
+    .path-label {
+      font-size: 0.65rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      margin-bottom: 0.5rem;
+    }
+
+    .path-title { font-size: 1rem; font-weight: 700; margin-bottom: 0.4rem; }
+    .path-desc  { font-size: 0.82rem; color: var(--muted); line-height: 1.5; margin-bottom: 1rem; }
+
+    .path-action {
+      display: inline-block;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--accent2);
+      text-decoration: none;
+    }
+    .path-action:hover { text-decoration: underline; }
+
+    code.block {
+      display: block;
+      font-family: 'SF Mono', 'Fira Code', monospace;
+      font-size: 0.78rem;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.65rem 0.85rem;
+      color: #a78bfa;
+      margin: 0.75rem 0 1rem;
+      white-space: pre;
+      overflow-x: auto;
+    }
+
+    /* ── Footer ── */
+    footer {
+      text-align: center;
+      padding: 2rem;
+      font-size: 0.78rem;
+      color: var(--muted);
+      border-top: 1px solid var(--border);
+    }
+
+    footer a { color: var(--muted); text-decoration: none; }
+    footer a:hover { color: var(--text); }
+
+    @media (max-width: 600px) {
+      .nav-links { display: none; }
+      h1 { letter-spacing: -1px; }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-logo">forge<span>.</span></div>
+  <ul class="nav-links">
+    <li><a href="#how">How it works</a></li>
+    <li><a href="#safe">Why it's safe</a></li>
+    <li><a href="#start">Get started</a></li>
+    <li><a href="https://github.com/ngwarner/forge/blob/main/SPEC.md">Spec</a></li>
+    <li><a href="https://github.com/ngwarner/forge" class="nav-cta">GitHub →</a></li>
+  </ul>
+</nav>
+
+<!-- Hero -->
+<section class="hero">
+  <div class="hero-badge">Open Protocol · v0.1</div>
+  <h1>You describe it.<br><em>Forge builds it.</em></h1>
+  <p class="hero-sub">
+    An open protocol for human-AI creation. No coding required.
+    Describe a problem or idea in plain English — Forge turns it into working software, safely.
+  </p>
+  <div class="hero-actions">
+    <a href="#start" class="btn btn-primary">Get started free →</a>
+    <a href="https://github.com/ngwarner/forge/blob/main/SPEC.md" class="btn btn-secondary">Read the spec</a>
+  </div>
+
+  <!-- Demo conversation -->
+  <div class="demo">
+    <div class="demo-bar">
+      <div class="dot dot-r"></div>
+      <div class="dot dot-y"></div>
+      <div class="dot dot-g"></div>
+      <span class="demo-title">Forge — Claude Project</span>
+    </div>
+    <div class="demo-body">
+      <div class="msg msg-human">
+        <div class="msg-avatar">You</div>
+        <div class="msg-content">It's hard to find the cheapest car rental when I'm travelling</div>
+      </div>
+      <div class="msg msg-forge">
+        <div class="msg-avatar">F</div>
+        <div class="msg-content">
+          Here's what I'll build:<br><br>
+          <strong>Car Rental Finder</strong> — open every major rental provider simultaneously with your trip details pre-filled, then track prices as you compare.<br><br>
+          <strong>What you provide:</strong> pickup city, dates, car type<br>
+          <strong>What it does:</strong> opens Kayak, Enterprise, Hertz, Avis and Budget — each pre-filled<br>
+          <strong>Bonus:</strong> price tracker shows which is cheapest + money-saving tips<br><br>
+          Does this match what you had in mind?
+        </div>
+      </div>
+      <div class="msg msg-human">
+        <div class="msg-avatar">You</div>
+        <div class="msg-content">Yes, perfect</div>
+      </div>
+      <div class="msg msg-forge">
+        <div class="msg-avatar">F</div>
+        <div class="msg-content">
+          Built. Open <code>car-rental-finder.html</code> in any browser — no install needed. Enter your trip details and it opens all the providers at once. ✓
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- How it works -->
+<section class="section" id="how">
+  <div class="section-label">How it works</div>
+  <h2>Three steps. No code.</h2>
+  <p class="section-sub">Forge separates understanding from building — the step where AI usually goes wrong.</p>
+  <div class="steps">
+    <div class="step-card">
+      <div class="step-num">Step 1</div>
+      <div class="step-title">Describe your need</div>
+      <div class="step-desc">Say what's hard, what you need, or what you want to build. Plain English. No technical terms required.</div>
+    </div>
+    <div class="step-card">
+      <div class="step-num">Step 2</div>
+      <div class="step-title">Review the spec</div>
+      <div class="step-desc">Forge shows you what it understood before writing a single line of code. You approve, correct, or redirect — then it builds.</div>
+    </div>
+    <div class="step-card">
+      <div class="step-num">Step 3</div>
+      <div class="step-title">Get working software</div>
+      <div class="step-desc">A complete, immediately usable app or script. Not a prototype. Not starter code. The finished thing.</div>
+    </div>
+    <div class="step-card">
+      <div class="step-num">Always</div>
+      <div class="step-title">Verified against the spec</div>
+      <div class="step-desc">The examples you approved run automatically against the output. If they fail, Forge regenerates — not you.</div>
+    </div>
+  </div>
+</section>
+
+<!-- Why safe -->
+<section class="section" id="safe" style="padding-top:0;">
+  <div class="section-label">Why it's safe</div>
+  <h2>Built for humans, not developers.</h2>
+  <p class="section-sub">Forge is designed around one principle: you should always understand what's being built before it's built.</p>
+  <div class="safety-grid">
+    <div class="safety-card">
+      <div class="safety-icon">📋</div>
+      <div>
+        <div class="safety-title">Spec before code</div>
+        <div class="safety-desc">AI shows its interpretation in plain English before generating anything. You approve it. Misunderstandings get caught here — not after.</div>
+      </div>
+    </div>
+    <div class="safety-card">
+      <div class="safety-icon">🔒</div>
+      <div>
+        <div class="safety-title">Declared effects only</div>
+        <div class="safety-desc">Every side effect (network calls, file access, location) is declared in the spec. An implementation that does more violates the contract.</div>
+      </div>
+    </div>
+    <div class="safety-card">
+      <div class="safety-icon">🔑</div>
+      <div>
+        <div class="safety-title">Your key, your data</div>
+        <div class="safety-desc">Forge never stores your API key on a server. It lives in your browser and is sent directly to the AI. Nothing is collected.</div>
+      </div>
+    </div>
+    <div class="safety-card">
+      <div class="safety-icon">✓</div>
+      <div>
+        <div class="safety-title">Auto-verified</div>
+        <div class="safety-desc">The examples in your spec become automatic tests. If the built app fails them, Forge knows — and rebuilds before you see it.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Get started -->
+<section class="get-started" id="start">
+  <h2>Three ways to start</h2>
+  <p>Choose whatever fits how you work.</p>
+  <div class="path-grid">
+    <div class="path-card">
+      <div class="path-label">Easiest · Anyone</div>
+      <div class="path-title">Claude Project</div>
+      <div class="path-desc">Use Forge inside Claude. Copy the system prompt into a Claude Project and share the link with anyone.</div>
+      <code class="block">Copy from SYSTEM_PROMPT.md
+Paste into a Claude Project</code>
+      <a class="path-action" href="https://github.com/ngwarner/forge/blob/main/SYSTEM_PROMPT.md">Get the system prompt →</a>
+    </div>
+    <div class="path-card">
+      <div class="path-label">Claude Desktop · MCP</div>
+      <div class="path-title">forge-intent</div>
+      <div class="path-desc">Adds Forge as a tool to Claude Desktop. Claude uses it automatically when you ask to build something.</div>
+      <code class="block">npx -y forge-intent</code>
+      <a class="path-action" href="https://github.com/ngwarner/forge/tree/main/mcp">Setup guide →</a>
+    </div>
+    <div class="path-card">
+      <div class="path-label">Developers</div>
+      <div class="path-title">Self-host</div>
+      <div class="path-desc">Run the web UI locally or deploy your own instance to Render in one click. Full source on GitHub.</div>
+      <code class="block">git clone github.com/ngwarner/forge
+cd forge/web && python app.py</code>
+      <a class="path-action" href="https://github.com/ngwarner/forge">View on GitHub →</a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <p>
+    Forge is open source · <a href="https://github.com/ngwarner/forge">GitHub</a> ·
+    <a href="https://github.com/ngwarner/forge/blob/main/SPEC.md">Specification</a> ·
+    <a href="https://github.com/ngwarner/forge/blob/main/SYSTEM_PROMPT.md">System Prompt</a> ·
+    MIT License
+  </p>
+</footer>
+
+</body>
+</html>
